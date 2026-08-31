@@ -61,13 +61,13 @@ sciWolframImage[expr_, sciWolframImageDPI_, sciWolframImageName_, playNB_, sciWo
     ,
     dir = Which[
         SameQ[$InputFileName, ""],
-            Quiet @ Check[NotebookDirectory[], Directory[]]
+            Quiet @ Check[NotebookDirectory[], $TemporaryDirectory]
         ,
         StringContainsQ[$InputFileName, "WolframLanguageForJupyter"],
             Directory[]
         ,
         True,
-            DirectoryName[$InputFileName]
+            $TemporaryDirectory
     ];
     sciWolframImageDir = FileNameJoin[{dir, "tmp", "wolfram"}];
     If[Not @ DirectoryQ[sciWolframImageDir],
