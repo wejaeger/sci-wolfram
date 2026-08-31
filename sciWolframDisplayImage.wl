@@ -30,7 +30,7 @@ sciWolframEnv = If[SameQ[Environment["TERM_PROGRAM"], "vscode"],
     "emacs"
 ];
 
-sciWolframPlayer = First[FileNames[{"*wolframplayer*", "*WolframNB*"}, $InstallationDirectory, 2], Null];
+sciWolframPlayer = First[FileNames[{"*wolframplayer*", "*WolframNB*"}, FileNameJoin[{$InstallationDirectory, "Executables"}], 2], Null];
 
 (* Display plain text output *)
 
