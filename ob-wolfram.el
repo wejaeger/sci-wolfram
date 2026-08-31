@@ -1,4 +1,4 @@
-;;; ob-wolfram.el --- Org-babel for Wolfram language -*- lexical-binding: t -*-
+;;; ob-wolfram.el --- Org-babel for Wolfram language  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2025-2026 PENG
 
@@ -37,10 +37,9 @@
 
 ;;; Code:
 
-(require 'org)
-(require 'ob-core)
-(require 'ob-comint)
-(require 'cl-seq)
+(require 'ob)
+(require 'ob-ref)
+(require 'ob-eval)
 
 (defvar ob-wolfram-session "*Wolfram REPL*")
 
@@ -49,6 +48,9 @@
 (defvar ob-wolfram-async-registered nil)
 
 (defvar ob-wolfram-prompt-regexp "^In\\[[0-9]+\\]:= ")
+
+(defvar ob-wolfram-out-regexp "^.*?Out\\[[0-9]+\\].*?=\w*?")
+
 
 ;; session evaluate
 (defun ob-wolfram-make-repl ()
@@ -64,7 +66,7 @@
 (defun ob-wolfram-remove-empty-lines (body)
   (substring-no-properties (replace-regexp-in-string "\n[ \t\n]*\n" "\n" body)))
 
-(defun ob-wolfram-evaluate-session (body)
+(defun ob-wolfram-evaluate-session (body &optional inline)
   "Evaluate wolfram babel session."
   (let* ((eoe (format "ob_wolfram_eoe_%s" (org-id-uuid)))
          (code (concat
@@ -72,8 +74,9 @@
                 (format "\nWriteString[\"stdout\",\"%s\\n\"];\n" eoe)))
          (result (org-babel-comint-with-output
                      (ob-wolfram-session eoe)
-                   (comint-send-string ob-wolfram-session code))))
-    (mapconcat #'identity (cl-remove eoe result :test #'string-match-p))))
+                   (comint-send-string ob-wolfram-session code)))
+         (return (mapconcat #'identity (cl-remove eoe result :test #'string-match-p))))
+    (if inline (string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" return)) return)))
 
 (defun ob-wolfram-initiate-session ()
   (unless ob-wolfram-session-initiated
@@ -164,25 +167,68 @@ See `org-babel-comint-async-chunk-callback'."
     (comint-send-string ob-wolfram-session code)
     uuid))
 
+(defun org-babel-inline-call-p ()
+  "Check if current execution type is inline."
+  (org-element-type-p (org-element-context) '(inline-babel-call inline-src-block)))
+
+(defun org-babel-replace-drawer (result-params)
+  "Replace occurrence of 'drawer' in result-params with blank."
+  (when (member "drawer" result-params)
+    (setf (nth (cl-position "drawer" result-params :test 'equal) result-params) ""))
+  result-params)
+
+
 ;; org babel execute
 ;;;###autoload
 (defun org-babel-execute:wolfram (body params)
   (ob-wolfram-make-repl)
   (ob-wolfram-initiate-session)
-  (let ((async (cdr (assq :async params))))
-    (if (string-match-p "yes" async)
-        (ob-wolfram-async-evaluate-session body)
-      (ob-wolfram-evaluate-session body))))
+
+  (let* ((async (cdr (assq :async params)))
+	(processed-params (org-babel-process-params params))
+        ;; for check if inline
+	(inline (org-babel-inline-call-p))
+
+	;; expand the body with `org-babel-expand-body:wolfram'
+	(full-body (org-babel-expand-body:wolfram body params processed-params)))
+
+    ;; drawer as result type is not allowed inline
+    (when inline (org-babel-replace-drawer (cdr (assq :result-params params))))
+    (if (and (string-match-p "yes" async) (not inline))
+	(ob-wolfram-async-evaluate-session full-body)
+      (ob-wolfram-evaluate-session full-body inline))))
+
+;; This function expands the body of a source code block by doing things like
+;; prepending argument definitions to the body, it should be called by the
+;; `org-babel-execute:wolfram' function above. Variables get concatenated in
+;; the `mapconcat' form, therefore to change the formatting you can edit the
+;; `format' form.
+(defun org-babel-expand-body:wolfram (body params &optional processed-params)
+  "Expand BODY according to PARAMS, return the expanded body."
+  (let ((vars (org-babel--get-vars (or processed-params (org-babel-process-params params)))))
+    (concat
+     (mapconcat ;; define any variables
+      (lambda (pair)
+        (format "%s = %s;"
+                (car pair) (org-babel-wolfram-var-to-wolfram (cdr pair))))
+      vars "\n")
+     "\n" body "\n")))
+
+(defun org-babel-wolfram-var-to-wolfram (var)
+  "Convert an elisp var into a string of wolfram source code
+   specifying a var of the same value."
+  (if (listp var)
+      (concat "{" (mapconcat #'org-babel-wolfram-var-to-wolfram var ", ") "}")
+    (format "%S" var)))
 
 (defvar org-babel-default-header-args:wolfram
   `((:session . ,ob-wolfram-session)
-    (:async . "yes")
+    (:async . "no")
     (:results . "value drawer")
     (:display . "text")
     (:comments . "link")
-    (:eval . "never-export")
-    (:exports . "both")))
-
+    (:exports . "both"))
+  "Default arguments to use when evaluating a source block.")
 
 (provide 'ob-wolfram)
 ;;; ob-wolfram.el ends here
