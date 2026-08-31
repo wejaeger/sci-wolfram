@@ -17,7 +17,7 @@ In addition to the upstream features
 
 ## Examples
 
-### Convert a `org-table`{.verbatim} using a `:var`{.verbatim} header argument
+### Convert a `org-table`} using a `:var` header argument
 
 ``` example
 #+NAME: example-table
@@ -50,7 +50,7 @@ The integral of $x^2$ is src_wolfram[:exports results]{TeXForm[Integrate[x^2, x]
 The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
 ```
 
-### Remove output fields from results using `:post`{.verbatim} header argument
+### Remove output fields from results using `:post` header argument
 
 -   Normal result
 
@@ -99,7 +99,7 @@ The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
 -   Free [Wolfram Engine](https://www.wolfram.com/engine/), includes
     `wolframscript` and `wolframplayer` or [WOLFRAM
     MATHEMATICA](https://www.wolfram.com/mathematica/)
--   Optional `LaTex`{.verbatim} for [Previewing LaTeX
+-   Optional `LaTex` for [Previewing LaTeX
     fragments](https://orgmode.org/manual/Previewing-LaTeX-fragments.html)
     and / or for [LaTeX / PDF
     Export](https://emacsdocs.org/docs/org/LaTeX-Export)
