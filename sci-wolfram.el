@@ -123,7 +123,7 @@
      n n "*)")))
 
 (defvar sci-wolfram-package-alist '(("display image" . sci-wolfram-display-image-package)
-                                    ("convert to notebook" sci-wolfram-convert-to-notebook-package)))
+                                    ("convert to notebook" . sci-wolfram-convert-to-notebook-package)))
 
 ;;;###autoload
 (defun sci-wolfram-import-package ()
@@ -132,16 +132,16 @@
 [2] convert to notebook: sciWolframConvertToNotebook.wl package."
   (interactive)
   (let* ((pkg (completing-read "Import package: " sci-wolfram-package-alist nil t))
-         (pkg-func (cdr (assoc pkg sci-wolfram-package-alist))))
+         (func (cdr (assoc pkg sci-wolfram-package-alist))))
     (save-excursion
       (if (and (derived-mode-p 'org-mode)
                (org-in-src-block-p))
           (progn (org-edit-src-code)
                  (forward-line 1)
-                 (insert (funcall pkg-func))
+                 (insert (funcall func))
                  (org-edit-src-exit))
         (progn (forward-line 1)
-               (insert (funcall pkg-func)))))))
+               (insert (funcall func)))))))
 
 ;; run wolfram script region or buffer code
 ;;;###autoload
