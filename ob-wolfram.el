@@ -33,7 +33,7 @@
 ;; Installation and usage:
 ;; Please check README.md.
 
-;; See https://github.com/TurbulenceChaos/sci-wolfram for more information.
+;; See https://github.com/wejaeger/sci-wolfram for more information.
 
 ;;; Code:
 
@@ -51,6 +51,10 @@
 
 (defvar ob-wolfram-out-regexp "^.*?Out\\[[0-9]+\\].*?=\w*?")
 
+(defcustom ob-wolfram-strip-result t
+  "When not `nil', remove all `Out[]' labels in results."
+  :group 'sci-wolfram
+  :type 'boolean)
 
 ;; session evaluate
 (defun ob-wolfram-make-repl ()
@@ -66,6 +70,12 @@
 (defun ob-wolfram-remove-empty-lines (body)
   (substring-no-properties (replace-regexp-in-string "\n[ \t\n]*\n" "\n" body)))
 
+(defun ob-wolfram-postprocess (result inline)
+  "Remove all OUT[] labels when 'inline' or custom variable 'org-babel-wolfram-strip-result' is non nil."
+  (if (or inline ob-wolfram-strip-result)
+	(string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" result))
+      result))
+
 (defun ob-wolfram-evaluate-session (body &optional inline)
   "Evaluate wolfram babel session."
   (let* ((eoe (format "ob_wolfram_eoe_%s" (org-id-uuid)))
@@ -76,7 +86,7 @@
                      (ob-wolfram-session eoe)
                    (comint-send-string ob-wolfram-session code)))
          (return (mapconcat #'identity (cl-remove eoe result :test #'string-match-p))))
-    (if inline (string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" return)) return)))
+    (ob-wolfram-postprocess return inline)))
 
 (defun ob-wolfram-initiate-session ()
   (unless ob-wolfram-session-initiated
@@ -133,7 +143,7 @@
   "Filter applied to results before insertion.
 See `org-babel-comint-async-chunk-callback'."
   (prog1
-      result
+      (ob-wolfram-postprocess result inline)
     (let ((buf (car ob-wolfram-babel-info))
           (pos (cdr ob-wolfram-babel-info)))
       (run-at-time 0 nil (lambda ()

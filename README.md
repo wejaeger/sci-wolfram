@@ -1,23 +1,27 @@
+Org-babel support for [WolframScript](https://www.wolfram.com/wolframscript/)
+
 **NOTE:** This is a fork form
 [TurbulenceChaos](https://github.com/TurbulenceChaos/sci-wolfram). To
 support exporting by default, I have changed the default header argument
-`(:async . "yes")`{.verbatim} to `(:async . "no")`{.verbatim} and
-removed `(:eval . "never-export")`{.verbatim}.
+`(:async . "yes")` to `(:async . "no")` and
+removed `(:eval . "never-export")`.
 
 # Features
 
 In addition to the upstream features
 
--   [x] supports `:var`{.verbatim} header arguments
--   [x] supports inline execution types
-    -   Named code block can be called with ...
-        `call_<name>[<header rguments>](<arguments>)` ...
-    -   A code block can be inline with ...
-        `src_<language>[<header arguments>]{<body>}` ...
+- [x] supports `:var` header arguments
+- [x] supports inline execution types
+  -   Named code block can be called with ...
+      `call_<name>[<header rguments>](<arguments>)` ...
+  -   A code block can be inline with ...
+      `src_<language>[<header arguments>]{<body>}` ...
+- [X] By default remove all `Out[n]=` labels from source block execution results.
+      To keep it set custom variable `ob-wolfram-strip-result` to nil
 
 ## Examples
 
-### Convert a `org-table`} using a `:var` header argument
+### Convert a `org-table` using a `:var` header argument
 
 ``` example
 #+NAME: example-table
@@ -50,47 +54,18 @@ The integral of $x^2$ is src_wolfram[:exports results]{TeXForm[Integrate[x^2, x]
 The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
 ```
 
-### Remove output fields from results using `:post` header argument
-
--   Normal result
-
-    ``` example
-    #+NAME: integrate
-    #+begin_src wolfram :exports none
-      TeXForm[Integrate[Log[x], x]]
-    #+end_src
-
-    #+RESULTS: integrate
-    :results:
-
-
-    Out[7]//TeXForm= x (\log (x)-1)
-
-    :end:
-
-    #+end_src
-    ```
-
--   Output field removed
-
-    ``` example
-    #+NAME: strip
-    #+begin_src emacs-lisp :var body="" :results none :exports none
-      "Replace all occurrencies of '*Out[0-9+]*=' with empty string."
-      (let ((regexp "^.*?Out\\[[0-9]+\\].*?=\w*?"))
-        (string-trim(replace-regexp-in-string regexp "" body)))
-    #+end_src
-
-    #+NAME: integrate
-    #+begin_src wolfram :exports none :post strip(*this*)
-      TeXForm[Integrate[Log[x], x]]
-    #+end_src
-
-    #+RESULTS: integrate
-    :results:
-    x (\log (x)-1)
-    :end:
-    ```
+### Latex output
+  ``` example
+  #+NAME: integrate
+  #+begin_src wolfram :exports none
+    TeXForm[Integrate[Log[x], x]]
+  #+end_src
+  
+  #+RESULTS: integrate
+  :results:
+  x (\log (x)-1)
+  :end:
+  ```
 
 # Installation for `Emacs`
 
@@ -119,5 +94,6 @@ The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
   :config
   (add-hook 'sci-wolfram-mode-hook #'lsp-deferred)
   :custom
+  ;;(ob-wolfram-strip-result nil)
   (sci-wolfram-formula-type "image"))
 ```
