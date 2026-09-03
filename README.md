@@ -1,4 +1,6 @@
-Org-babel support for [WolframScript](https://www.wolfram.com/wolframscript/)
+# sci-wolfram
+
+Org-babel support for [WolframScript](https://www.wolfram.com/wolframscript/).
 
 **NOTE:** This is a fork form
 [TurbulenceChaos](https://github.com/TurbulenceChaos/sci-wolfram). To
@@ -6,7 +8,7 @@ support exporting by default, I have changed the default header argument
 `(:async . "yes")` to `(:async . "no")` and
 removed `(:eval . "never-export")`.
 
-# Features
+## Features
 
 In addition to the upstream features
 
@@ -17,11 +19,11 @@ In addition to the upstream features
   -   A code block can be inline with ...
       `src_<language>[<header arguments>]{<body>}` ...
 - [X] By default remove all `Out[n]=` labels from source block execution results.
-      To keep it set custom variable `ob-wolfram-strip-result` to nil
+      To keep it, set custom variable `ob-wolfram-strip-result` to nil
 
-## Examples
+### Examples
 
-### Convert a `org-table` using a `:var` header argument
+#### Convert a `org-table` using a `:var` header argument
 
 ``` example
 #+NAME: example-table
@@ -35,15 +37,21 @@ In addition to the upstream features
 #+BEGIN_SRC wolfram :var t=example-table
   1+Transpose@t
 #+END_SRC
+
+#+RESULTS: transpose
+:results:
+| 2 | 3 | 4 | 5 | 8 |
+| 5 | 5 | 7 | 9 | 1 |
+:end:
 ```
 
-### Inline code block
+#### Inline code block
 
 ``` example
 The integral of $x^2$ is src_wolfram[:exports results]{TeXForm[Integrate[x^2, x]]}.
 ```
 
-### Inline evaluation of a named code block
+#### Inline evaluation of a named code block
 
 ``` example
 #+NAME: limit
@@ -54,7 +62,7 @@ The integral of $x^2$ is src_wolfram[:exports results]{TeXForm[Integrate[x^2, x]
 The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
 ```
 
-### Latex output
+#### Latex output
   ``` example
   #+NAME: integrate
   #+begin_src wolfram :exports none
@@ -67,9 +75,9 @@ The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
   :end:
   ```
 
-# Installation for `Emacs`
+## Installation for `Emacs`
 
-## Prerequisites
+### Prerequisites
 
 -   Free [Wolfram Engine](https://www.wolfram.com/engine/), includes
     `wolframscript` and `wolframplayer` or [WOLFRAM
@@ -79,7 +87,7 @@ The limit of $\lim_{\eta\rightarrow 0^+} \ln (b-a+i\eta)$ is call_limit().
     and / or for [LaTeX / PDF
     Export](https://emacsdocs.org/docs/org/LaTeX-Export)
 
-## Configuration
+### Configuration
 
 ``` elisp
 ;; configure sci-wolfram package
