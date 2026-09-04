@@ -9,7 +9,7 @@ Support session and async run
 ** sciWolframDisplayImage.wl Package
 #+name: import-sci-wolfram-image-package
 #+begin_src wolfram
-(* Please run "M-x sci-wolfram-import-package RET display image" from this line *)
+(* Please run "M-x sci-wolfram-import-package RET display image RET" from this line *)
 #+end_src
 
 #+name: sci-wolfram-run-code
@@ -28,7 +28,7 @@ MatrixForm[Array[Subscript[a, ##]&, {2, 2, 2}]]
 ** sciWolframConvertToNotebook.wl Package
 #+name: import-sci-wolfram-convert-to-notebook-package
 #+begin_src wolfram
-(* Please run M-x sci-wolfram-import-convert-to-notebook-pkg from this line *)
+(* Please run "M-x sci-wolfram-import-package RET convert to notebook RET" from this line *)
 #+end_src
 
 #+name: sci-wolfram-convert-to-notebook
