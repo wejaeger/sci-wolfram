@@ -41,15 +41,21 @@
 (require 'ob-ref)
 (require 'ob-eval)
 
-(defvar ob-wolfram-session "*Wolfram REPL*")
+(defconst ob-wolfram-session "*Wolfram REPL*")
+
+(defconst ob-wolfram-prompt-regexp "^In\\[[0-9]+\\]:= ")
+
+(defconst ob-wolfram-out-regexp "^.*?Out\\[[0-9]+\\].*?=\w*?")
 
 (defvar ob-wolfram-session-initiated nil)
 
 (defvar ob-wolfram-async-registered nil)
 
-(defvar ob-wolfram-prompt-regexp "^In\\[[0-9]+\\]:= ")
+;; org-babel-execute:wolfram stores current execution parameters here
+(defvar ob-wolfram-curr-params nil)
 
-(defvar ob-wolfram-out-regexp "^.*?Out\\[[0-9]+\\].*?=\w*?")
+;; display inline images in babel result
+(defvar ob-wolfram-babel-info nil)
 
 (defcustom ob-wolfram-strip-result t
   "When not `nil', remove all `Out[]' labels in results."
@@ -71,10 +77,18 @@
   (substring-no-properties (replace-regexp-in-string "\n[ \t\n]*\n" "\n" body)))
 
 (defun ob-wolfram-postprocess (result inline)
-  "Remove all OUT[] labels when 'inline' or custom variable 'org-babel-wolfram-strip-result' is non nil."
-  (if (or inline ob-wolfram-strip-result)
-	(string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" result))
-      result))
+  "Remove all OUT[] labels when 'inline' or custom variable 'org-babel-wolfram-strip-result' is non nil.
+  After that, if appropriate, convert tables into elisp lists."
+  (org-babel-reassemble-table
+    (org-babel-script-escape
+      (if (or inline ob-wolfram-strip-result)
+	  (string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" result))
+	result))
+    (org-babel-pick-name (cdr (assq :colname-names ob-wolfram-curr-params))
+		         (cdr (assq :colnames ob-wolfram-curr-params)))
+    (org-babel-pick-name (cdr (assq :rowname-names ob-wolfram-curr-params))
+			 (cdr (assq :rownames ob-wolfram-curr-params)))))
+
 
 (defun ob-wolfram-evaluate-session (body &optional inline)
   "Evaluate wolfram babel session."
@@ -93,13 +107,10 @@
     (ob-wolfram-evaluate-session "WriteString[\"stdout\",\"Initiate wolfram babel session\\n\"];\n")
     (setq ob-wolfram-session-initiated t)))
 
-;; display inline images in babel result
-(defvar ob-wolfram-babel-info nil)
-
 (defun ob-wolfram-babel-get-info ()
   (let ((buf (current-buffer))
         (pos (point)))
-    (setq ob-wolfram-babel-info (cons buf pos))))
+    (setq-local ob-wolfram-babel-info (cons buf pos))))
 
 (add-hook 'org-babel-after-execute-hook #'ob-wolfram-babel-get-info)
 
@@ -143,7 +154,7 @@
   "Filter applied to results before insertion.
 See `org-babel-comint-async-chunk-callback'."
   (prog1
-      (ob-wolfram-postprocess result inline)
+      (ob-wolfram-postprocess result nil)
     (let ((buf (car ob-wolfram-babel-info))
           (pos (cdr ob-wolfram-babel-info)))
       (run-at-time 0 nil (lambda ()
@@ -177,33 +188,33 @@ See `org-babel-comint-async-chunk-callback'."
     (comint-send-string ob-wolfram-session code)
     uuid))
 
-(defun org-babel-inline-call-p ()
+(defun ob-wolfram-inline-call-p ()
   "Check if current execution type is inline."
   (org-element-type-p (org-element-context) '(inline-babel-call inline-src-block)))
 
-(defun org-babel-replace-drawer (result-params)
-  "Replace occurrence of 'drawer' in result-params with blank."
+(defun ob-wolfram-replace-drawer (result-params)
+  "Replace occurrences of 'drawer' in result-params with empty string."
   (when (member "drawer" result-params)
     (setf (nth (cl-position "drawer" result-params :test 'equal) result-params) ""))
   result-params)
 
-
 ;; org babel execute
 ;;;###autoload
 (defun org-babel-execute:wolfram (body params)
+  (setq-local ob-wolfram-curr-params params)
   (ob-wolfram-make-repl)
   (ob-wolfram-initiate-session)
 
   (let* ((async (cdr (assq :async params)))
 	(processed-params (org-babel-process-params params))
         ;; for check if inline
-	(inline (org-babel-inline-call-p))
+	(inline (ob-wolfram-inline-call-p))
 
 	;; expand the body with `org-babel-expand-body:wolfram'
 	(full-body (org-babel-expand-body:wolfram body params processed-params)))
 
     ;; drawer as result type is not allowed inline
-    (when inline (org-babel-replace-drawer (cdr (assq :result-params params))))
+    (when inline (ob-wolfram-replace-drawer (cdr (assq :result-params params))))
     (if (and (string-match-p "yes" async) (not inline))
 	(ob-wolfram-async-evaluate-session full-body)
       (ob-wolfram-evaluate-session full-body inline))))
