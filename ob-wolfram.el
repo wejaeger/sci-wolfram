@@ -79,15 +79,17 @@
 (defun ob-wolfram-postprocess (result inline)
   "Remove all OUT[] labels when 'inline' or custom variable 'org-babel-wolfram-strip-result' is non nil.
   After that, if appropriate, convert tables into elisp lists."
-  (org-babel-reassemble-table
-    (org-babel-script-escape
-      (if (or inline ob-wolfram-strip-result)
-	  (string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" result))
-	result))
-    (org-babel-pick-name (cdr (assq :colname-names ob-wolfram-curr-params))
-		         (cdr (assq :colnames ob-wolfram-curr-params)))
-    (org-babel-pick-name (cdr (assq :rowname-names ob-wolfram-curr-params))
-			 (cdr (assq :rownames ob-wolfram-curr-params)))))
+  (let* ((stripped (if (or inline ob-wolfram-strip-result)
+		       (string-trim(replace-regexp-in-string ob-wolfram-out-regexp "" result))
+		     result)))
+    (if (string-prefix-p "[[file" stripped)
+	stripped
+      (org-babel-reassemble-table
+        (org-babel-script-escape stripped)
+        (org-babel-pick-name (cdr (assq :colname-names ob-wolfram-curr-params))
+  	                     (cdr (assq :colnames ob-wolfram-curr-params)))
+        (org-babel-pick-name (cdr (assq :rowname-names ob-wolfram-curr-params))
+			     (cdr (assq :rownames ob-wolfram-curr-params)))))))
 
 
 (defun ob-wolfram-evaluate-session (body &optional inline)
